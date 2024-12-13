@@ -15,7 +15,7 @@ process GENERATE_OVERLAPS {
     path "*_overlaps.paf", emit: overlaps
 
     script:
-    def prefix = reads.baseName()
+    def prefix = reads.baseName
     """
     dorado correct ${reads} --to-paf > ${prefix}_overlaps.paf
     """
