@@ -2,17 +2,52 @@
 
 nextflow.enable.dsl = 2
 
-params.reads = "reads.fastq"
-params.outdir = "results"
+process BAM2FQ {
+    container "quay.io/biocontainers/samtools:1.21--h50ea8bc_0"
+
+    publishDir "${params.outdir}/fastq/", mode: 'copy'
+
+    input:
+    path bam
+
+    output:
+    path "*.fq", emit: fastq
+
+    script:
+    def prefix = bam.baseName
+    """
+    samtools fastq --threads 28 ${bam} > ${prefix}.fq
+    """
+}
+
+process FQIDX {
+    container "quay.io/biocontainers/samtools:1.21--h50ea8bc_0"
+
+    publishDir "${params.outdir}/fastq/", mode: 'copy'
+
+    input:
+    path fastq
+
+    output:
+    path "*.fq.fai", emit: index
+
+    script:
+    def prefix = fastq.baseName
+    """
+    samtools fqidx ${fastq} > ${prefix}.fq.fai
+    """
+}
 
 process GENERATE_OVERLAPS {
     container "aharish/dorado-public:0.8.3"
+
+    publishDir "${params.outdir}/corrected_reads/", mode: 'copy'
     
     input:
     path reads
 
     output:
-    path "*_overlaps.paf", emit: overlaps
+    path "*.paf", emit: overlaps
 
     script:
     def prefix = reads.baseName
@@ -21,23 +56,34 @@ process GENERATE_OVERLAPS {
     """
 }
 
-// process CORRECT_READS {
-//     conda "bioconda::dorado=0.3.1"
-//     publishDir "${params.outdir}", mode: 'copy'
-//     input:
-//     path reads
-//     path overlaps
-//     output:
-//     path "corrected_reads.fasta"
-//     script:
-//     """
-//     dorado correct ${reads} --from-paf ${overlaps} > corrected_reads.fasta
-//     """
-// }
+process CORRECT_READS {
+    container "aharish/dorado-public:0.8.3"
+
+    publishDir "${params.outdir}/corrected_reads/", mode: 'copy'
+
+    input:
+    path reads
+    path index
+    path overlaps
+
+    output:
+    path "*_corrected_reads.fasta", emit: corrected_reads
+
+    script:
+    def prefix = reads.baseName
+    """
+    dorado correct ${reads} --from-paf ${overlaps} > ${prefix}_corrected_reads.fasta
+    """
+}
 
 workflow {
-    reads_ch = channel.fromPath(params.reads)
+    reads_ch = Channel.fromPath(params.reads)
+    index_ch = Channel.fromPath(params.index)
+    overlaps_ch = Channel.fromPath(params.overlaps)
+    bam_ch = Channel.fromPath(params.bam)
 
-    GENERATE_OVERLAPS(reads_ch)
-    //CORRECT_READS(reads_ch, GENERATE_OVERLAPS.out.overlaps)
+    //BAM2FQ(bam_ch)
+    //FQIDX(BAM2FQ.out.fastq)
+    //GENERATE_OVERLAPS(reads_ch)
+    CORRECT_READS(reads_ch, index_ch, overlaps_ch)
 }
