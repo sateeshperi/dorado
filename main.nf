@@ -77,10 +77,10 @@ process CORRECT_READS {
 }
 
 workflow {
-    reads_ch = Channel.fromPath(params.reads)
-    index_ch = Channel.fromPath(params.index)
+    bam_ch      = Channel.fromPath(params.bam + '*.bam')
+    reads_ch    = Channel.fromPath(params.reads)
+    index_ch    = Channel.fromPath(params.index)
     overlaps_ch = Channel.fromPath(params.overlaps)
-    bam_ch = Channel.fromPath(params.bam)
 
     BAM2FQ(bam_ch)
     FQIDX(BAM2FQ.out.fastq)
