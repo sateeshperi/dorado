@@ -82,8 +82,8 @@ workflow {
     index_ch    = Channel.fromPath(params.index)
     overlaps_ch = Channel.fromPath(params.overlaps)
 
-    BAM2FQ(bam_ch)
-    FQIDX(BAM2FQ.out.fastq)
-    GENERATE_OVERLAPS(BAM2FQ.out.fastq)
-    //CORRECT_READS(reads_ch, index_ch, overlaps_ch)
+    //BAM2FQ(bam_ch)
+    //FQIDX(BAM2FQ.out.fastq)
+    //GENERATE_OVERLAPS(BAM2FQ.out.fastq)
+    CORRECT_READS(reads_ch, index_ch, overlaps_ch)
 }
