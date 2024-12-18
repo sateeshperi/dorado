@@ -39,7 +39,7 @@ process FQIDX {
 }
 
 process GENERATE_OVERLAPS {
-    container "aharish/dorado-public:0.8.3"
+    container "aharish/dorado-public:latest"
 
     publishDir "${params.outdir}/corrected_reads/", mode: 'copy'
     
@@ -57,7 +57,7 @@ process GENERATE_OVERLAPS {
 }
 
 process CORRECT_READS {
-    container "aharish/dorado-public:0.8.3"
+    container "aharish/dorado-public:latest"
 
     publishDir "${params.outdir}/corrected_reads/", mode: 'copy'
 
@@ -82,8 +82,8 @@ workflow {
     overlaps_ch = Channel.fromPath(params.overlaps)
     bam_ch = Channel.fromPath(params.bam)
 
-    //BAM2FQ(bam_ch)
-    //FQIDX(BAM2FQ.out.fastq)
-    //GENERATE_OVERLAPS(reads_ch)
-    CORRECT_READS(reads_ch, index_ch, overlaps_ch)
+    BAM2FQ(bam_ch)
+    FQIDX(BAM2FQ.out.fastq)
+    GENERATE_OVERLAPS(BAM2FQ.out.fastq)
+    //CORRECT_READS(reads_ch, index_ch, overlaps_ch)
 }
